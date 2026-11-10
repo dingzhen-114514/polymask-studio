@@ -1,0 +1,12 @@
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Exported archives
+*.zip
+
+# Local tooling
+node_modules/
+.vscode/
+.idea/

@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>PolyMask · 多边形缺陷掩码标注台</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23101318'/%3E%3Cpath d='M17 41 22 18l21 5 4 23-24 3z' fill='%23ff6b3d'/%3E%3Ccircle cx='22' cy='18' r='4' fill='%23fff1e9'/%3E%3Ccircle cx='43' cy='23' r='4' fill='%23fff1e9'/%3E%3Ccircle cx='47' cy='46' r='4' fill='%23fff1e9'/%3E%3Ccircle cx='23' cy='49' r='4' fill='%23fff1e9'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M7.2 21.3 9.1 8.6l11.5 2.7 2.2 12.5-13.4 1.7Z" fill="currentColor" opacity=".95"/>
+            <path d="M7.2 21.3 9.1 8.6l11.5 2.7 2.2 12.5-13.4 1.7Z" stroke="#fff3ec" stroke-width="1.1" stroke-linejoin="round" opacity=".65"/>
+            <circle cx="9.1" cy="8.6" r="1.7" fill="#fff7f2"/>
+            <circle cx="20.6" cy="11.3" r="1.7" fill="#fff7f2"/>
+            <circle cx="22.8" cy="23.8" r="1.7" fill="#fff7f2"/>
+            <circle cx="9.4" cy="25.5" r="1.7" fill="#fff7f2"/>
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <strong>PolyMask</strong>
+          <span>多边形缺陷掩码标注台</span>
+        </span>
+      </div>
+
+      <div class="header-progress" aria-label="总体进度">
+        <div class="header-progress-copy">
+          <span class="status-light" aria-hidden="true"></span>
+          <span>已标注</span>
+          <b id="headerProgressText">0 / 0</b>
+        </div>
+        <div class="header-progress-track"><span id="headerProgressBar"></span></div>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="btn btn-quiet btn-icon-text" id="importFilesBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9" r="1.4"/><path d="m5.5 17 4.2-4.3 3.1 3 2.3-2.3 3.4 3.6"/></svg>
+          <span>添加图片</span>
+        </button>
+        <button class="btn btn-quiet btn-icon-text" id="importFolderBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h6.5A2.5 2.5 0 0 1 20.5 9.5v7A2.5 2.5 0 0 1 18 19H5.5A2.5 2.5 0 0 1 3 16.5v-9Z"/><path d="M12 11v5m-2-2 2 2 2-2"/></svg>
+          <span>文件夹</span>
+        </button>
+        <span class="topbar-divider" aria-hidden="true"></span>
+        <button class="btn btn-primary" id="exportBtn" type="button" disabled>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M4 16v2.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V16"/></svg>
+          <span>导出掩码</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar" aria-label="图片库">
+        <div class="sidebar-head">
+          <div>
+            <div class="section-kicker">IMAGE LIBRARY</div>
+            <h2>图片库</h2>
+          </div>
+          <span class="count-pill" id="libraryCount">0</span>
+        </div>
+
+        <div class="progress-card">
+          <div class="progress-card-top">
+            <span>已标注</span>
+            <strong id="sidebarProgressText">0 / 0</strong>
+          </div>
+          <div class="mini-track"><span id="sidebarProgressBar"></span></div>
+          <div class="progress-card-foot">
+            <span id="defectStats">缺陷 0 · 空掩码 0</span>
+            <span id="pendingStats">待处理 0</span>
+          </div>
+        </div>
+
+        <div class="filter-row" role="tablist" aria-label="筛选图片">
+          <button class="filter-btn is-active" type="button" data-filter="all" role="tab" aria-selected="true">全部 <span id="filterAllCount">0</span></button>
+          <button class="filter-btn" type="button" data-filter="todo" role="tab" aria-selected="false">待完成 <span id="filterTodoCount">0</span></button>
+          <button class="filter-btn" type="button" data-filter="done" role="tab" aria-selected="false">已完成 <span id="filterDoneCount">0</span></button>
+        </div>
+
+        <div class="image-list" id="imageList" role="listbox" aria-label="图片列表">
+          <div class="list-empty" id="listEmpty">
+            <span class="list-empty-art" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none"><rect x="7" y="10" width="34" height="28" rx="4"/><path d="m10 32 9-10 6 7 5-6 8 9"/><circle cx="16.5" cy="19" r="2.5"/></svg>
+            </span>
+            <p>列表还是空的</p>
+            <span>添加图片后会显示在这里</span>
+          </div>
+        </div>
+
+        <div class="sidebar-foot">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg>
+          <span>本地处理 · 图片不会上传</span>
+        </div>
+      </aside>
+
+      <section class="editor" aria-label="标注画布">
+        <header class="editor-toolbar">
+          <div class="file-heading">
+            <div class="file-title-row">
+              <h1 id="currentName">未选择图片</h1>
+              <span class="save-badge" id="dirtyBadge" hidden></span>
+            </div>
+            <p id="currentMeta">导入图片或文件夹开始标注</p>
+          </div>
+          <button class="btn btn-tiny inspector-toggle" id="inspectorToggleBtn" type="button" aria-controls="inspector" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4 20 8.5v7L12 20l-8-4.5v-7L12 4Z"/><path d="m4.5 8.5 7.5 4 7.5-4M12 12.5V20"/></svg>
+            <span>标注</span>
+            <b id="inspectorToggleCount">0</b>
+          </button>
+          <div class="zoom-toolbar" aria-label="缩放控制">
+            <button class="icon-btn" id="zoomOutBtn" type="button" title="缩小" aria-label="缩小" disabled>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16 21 21M8 11h6"/></svg>
+            </button>
+            <button class="zoom-value" id="zoomLabel" type="button" title="重置为 100%" disabled>100%</button>
+            <button class="icon-btn" id="zoomInBtn" type="button" title="放大" aria-label="放大" disabled>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16 21 21M8 11h6M11 8v6"/></svg>
+            </button>
+            <button class="btn btn-tiny" id="fitBtn" type="button" disabled>适应</button>
+          </div>
+        </header>
+
+        <div class="stage-shell">
+          <div class="stage" id="stage">
+            <canvas id="canvas" tabindex="0" aria-label="缺陷多边形标注画布"></canvas>
+
+            <div class="empty-stage" id="emptyStage">
+              <div class="empty-visual" aria-hidden="true">
+                <svg viewBox="0 0 240 180" fill="none">
+                  <defs>
+                    <linearGradient id="scanFade" x1="0" y1="0" x2="0" y2="1">
+                      <stop stop-color="#ff6b3d" stop-opacity=".2"/>
+                      <stop offset="1" stop-color="#ff6b3d" stop-opacity="0"/>
+                    </linearGradient>
+                    <linearGradient id="photoTint" x1="0" y1="0" x2="1" y2="1">
+                      <stop stop-color="#222834"/>
+                      <stop offset="1" stop-color="#11151b"/>
+                    </linearGradient>
+                  </defs>
+                  <rect x="28" y="24" width="184" height="132" rx="12" fill="#0b0e13" stroke="#2b323e"/>
+                  <rect x="41" y="37" width="158" height="106" rx="7" fill="url(#photoTint)"/>
+                  <path d="M48 123 83 81l31 27 18-20 51 47H48Z" fill="#1a2029"/>
+                  <circle cx="153" cy="64" r="12" fill="#232a35"/>
+                  <path d="M77 112 99 70l41 10 8 47-52 6-19-21Z" fill="#ff6b3d" fill-opacity=".2" stroke="#ff7a4d" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 4"/>
+                  <circle cx="77" cy="112" r="5" fill="#ff6b3d" stroke="#ffe6dc" stroke-width="2"/>
+                  <circle cx="99" cy="70" r="5" fill="#ff6b3d" stroke="#ffe6dc" stroke-width="2"/>
+                  <circle cx="140" cy="80" r="5" fill="#ff6b3d" stroke="#ffe6dc" stroke-width="2"/>
+                  <circle cx="148" cy="127" r="5" fill="#ff6b3d" stroke="#ffe6dc" stroke-width="2"/>
+                  <circle cx="96" cy="133" r="5" fill="#ff6b3d" stroke="#ffe6dc" stroke-width="2"/>
+                  <rect x="28" y="24" width="184" height="22" rx="11" fill="url(#scanFade)" opacity=".5"/>
+                  <rect x="161" y="155" width="51" height="16" rx="8" fill="#141920" stroke="#242b36"/>
+                  <circle cx="170" cy="163" r="2.5" fill="#58d68d"/>
+                  <path d="M176 163h27" stroke="#3e4754" stroke-width="2" stroke-linecap="round"/>
+                  <rect x="16" y="9" width="60" height="16" rx="8" fill="#141920" stroke="#242b36"/>
+                  <path d="M24 17h44" stroke="#3e4754" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="empty-eyebrow">LOCAL-FIRST ANNOTATION</div>
+              <h2>圈出缺陷，导出标准掩码</h2>
+              <p>拖入一批图片或整个文件夹，逐张勾画缺陷轮廓。图片和标注只在当前浏览器中处理。</p>
+              <div class="empty-actions">
+                <button class="btn btn-primary" id="emptyFilesBtn" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9" r="1.4"/><path d="m5.5 17 4.2-4.3 3.1 3 2.3-2.3 3.4 3.6"/></svg>
+                  选择图片
+                </button>
+                <button class="btn btn-secondary" id="emptyFolderBtn" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h6.5A2.5 2.5 0 0 1 20.5 9.5v7A2.5 2.5 0 0 1 18 19H5.5A2.5 2.5 0 0 1 3 16.5v-9Z"/><path d="M12 11v5m-2-2 2 2 2-2"/></svg>
+                  选择文件夹
+                </button>
+              </div>
+              <div class="empty-specs">
+                <span><i class="spec-dot spec-orange"></i>8-bit 灰度 PNG</span>
+                <span><i class="spec-dot spec-white"></i>缺陷 255 / 背景 0</span>
+                <span><i class="spec-dot spec-green"></i>同名导出</span>
+              </div>
+              <div class="empty-formats">支持 JPG · PNG · WEBP · BMP · GIF · AVIF</div>
+            </div>
+
+            <div class="stage-loading" id="stageLoading" hidden>
+              <span class="spinner" aria-hidden="true"></span>
+              <span>正在读取图片…</span>
+            </div>
+
+            <div class="stage-error" id="stageError" hidden>
+              <div class="stage-error-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 8v5m0 3h.01"/><circle cx="12" cy="12" r="9"/></svg>
+              </div>
+              <h3>无法读取这张图片</h3>
+              <p id="stageErrorText">浏览器可能不支持该格式，或文件已损坏。</p>
+              <div class="stage-error-actions">
+                <button class="btn btn-secondary" id="stageErrorRemoveBtn" type="button">从列表移除</button>
+              </div>
+            </div>
+
+            <div class="mode-chip" id="modeChip" hidden>
+              <span class="crosshair-icon" aria-hidden="true"></span>
+              <span>多边形模式</span>
+              <span class="mode-chip-key">P</span>
+            </div>
+
+            <div class="canvas-readout" id="canvasReadout" hidden>
+              <span id="coordText">X — · Y —</span>
+              <span class="readout-divider"></span>
+              <span id="readoutSize">—</span>
+            </div>
+
+            <div class="zoom-toast" id="zoomToast" aria-live="polite"></div>
+          </div>
+
+          <div class="stage-hints" aria-label="快捷键提示">
+            <span><kbd>单击</kbd> 加点</span>
+            <span><kbd>双击</kbd><span class="hint-or">/</span><kbd>Enter</kbd> 闭合</span>
+            <span><kbd>⌫</kbd> 退点</span>
+            <span><kbd>Esc</kbd> 取消</span>
+            <span class="hint-sep" aria-hidden="true"></span>
+            <span><kbd>空格</kbd> 拖拽</span>
+            <span><kbd>滚轮</kbd> 缩放</span>
+            <span class="hint-sep hint-sep-last" aria-hidden="true"></span>
+            <span><kbd>←</kbd><kbd>→</kbd> 切换</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="inspector" id="inspector" aria-label="标注面板">
+        <header class="inspector-head">
+          <div>
+            <div class="section-kicker">ANNOTATION</div>
+            <h2>本图标注</h2>
+          </div>
+          <div class="inspector-head-tools">
+            <span class="count-pill" id="polygonCount">0</span>
+            <button class="icon-btn inspector-close" id="inspectorCloseBtn" type="button" title="关闭标注面板" aria-label="关闭标注面板">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="inspector-scroll">
+          <div class="draft-card" id="draftCard" hidden>
+            <div class="draft-card-top">
+              <span class="draft-pulse" aria-hidden="true"></span>
+              <span>正在绘制</span>
+              <b id="draftCount">0 个顶点</b>
+            </div>
+            <p>单击继续加点，点击起点或双击闭合。</p>
+            <div class="draft-actions">
+              <button class="btn btn-tiny btn-amber" id="draftCloseBtn" type="button" disabled>闭合多边形</button>
+              <button class="btn btn-tiny" id="draftCancelBtn" type="button">取消</button>
+            </div>
+          </div>
+
+          <div class="polygon-list" id="polygonList"></div>
+
+          <div class="inspector-empty" id="inspectorEmpty">
+            <span class="inspector-empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none"><path d="M12 33 15 13l20 4 3 20-23 3-3-7Z"/><circle cx="15" cy="13" r="2.3" fill="currentColor"/><circle cx="35" cy="17" r="2.3" fill="currentColor"/><circle cx="38" cy="37" r="2.3" fill="currentColor"/><circle cx="15" cy="40" r="2.3" fill="currentColor"/></svg>
+            </span>
+            <p id="inspectorEmptyTitle">还没有多边形</p>
+            <span id="inspectorEmptyText">单击开始勾画；拖动顶点微调，右键删点。</span>
+          </div>
+
+          <div class="clear-row" id="clearRow" hidden>
+            <button class="text-danger-btn" id="clearPolygonsBtn" type="button">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2m-8 0 1 13h8l1-13"/></svg>
+              清空本图多边形
+            </button>
+          </div>
+
+          <div class="tip-card">
+            <span class="tip-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5 21 8v8l-9 4.5L3 16V8l9-4.5Z"/><path d="m3.5 8 8.5 4.5L20.5 8M12 12.5V21"/></svg>
+            </span>
+            <div>
+              <strong>无缺陷也要保存</strong>
+              <p>本图没有多边形时，保存会生成一张全 0 掩码，不会被跳过。</p>
+            </div>
+          </div>
+
+          <div class="mask-note">
+            <div><span>掩码尺寸</span><b id="maskSizeText">—</b></div>
+            <div><span>输出格式</span><b>8-bit · 单通道</b></div>
+            <div><span>ZIP 附带</span><b>annotations.json</b></div>
+          </div>
+        </div>
+
+        <footer class="save-footer">
+          <button class="btn btn-primary btn-block" id="saveBtn" type="button" disabled>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 4h11l3 3v13H5V4Z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>
+            <span id="saveBtnText">保存标注</span>
+          </button>
+          <button class="btn btn-secondary btn-block" id="saveNextBtn" type="button" disabled>
+            <span>保存并下一张</span>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"/></svg>
+          </button>
+          <p class="save-note" id="saveNote">保存后会立即生成掩码，导出时统一打包。</p>
+        </footer>
+      </aside>
+    </main>
+  </div>
+
+  <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp,.bmp,.gif,.avif,image/jpeg,image/png,image/webp,image/bmp,image/gif,image/avif" multiple hidden>
+  <input type="file" id="folderInput" accept=".jpg,.jpeg,.png,.webp,.bmp,.gif,.avif,image/jpeg,image/png,image/webp,image/bmp,image/gif,image/avif" webkitdirectory directory multiple hidden>
+
+  <div class="drag-overlay" id="dragOverlay" hidden>
+    <div class="drag-overlay-inner">
+      <span class="drag-icon" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none"><path d="M32 9v32m0 0 11-11M32 41 21 30"/><path d="M12 43v6a6 6 0 0 0 6 6h28a6 6 0 0 0 6-6v-6"/></svg>
+      </span>
+      <h2>松开以导入图片</h2>
+      <p>支持单张、多张，或直接拖入整个文件夹</p>
+    </div>
+  </div>
+
+  <div class="toast-host" id="toastHost" aria-live="polite" aria-atomic="false"></div>
+
+  <div class="modal-backdrop" id="confirmModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+      <div class="modal-kicker" id="confirmKicker">PLEASE CONFIRM</div>
+      <h2 id="confirmTitle">确认操作</h2>
+      <p id="confirmMessage"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="confirmCancelBtn" type="button">取消</button>
+        <button class="btn btn-danger" id="confirmOkBtn" type="button">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="exportModal" hidden>
+    <div class="modal export-modal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+      <div class="export-symbol" aria-hidden="true">
+        <span class="spinner spinner-large"></span>
+        <svg class="export-check" viewBox="0 0 24 24" fill="none"><path d="m5 12 4.5 4.5L19 7"/></svg>
+      </div>
+      <div class="modal-kicker">EXPORTING DATASET</div>
+      <h2 id="exportTitle">正在生成掩码</h2>
+      <p id="exportMessage">按原始图片尺寸逐张生成 8-bit 灰度 PNG…</p>
+      <div class="export-progress"><span id="exportProgressBar"></span></div>
+      <div class="export-meta">
+        <span id="exportCurrent">准备中…</span>
+        <b id="exportCount">0 / 0</b>
+      </div>
+      <div class="export-foot">
+        <span id="exportHint">掩码和 annotations.json 将打包为 ZIP</span>
+        <button class="btn btn-tiny" id="exportCancelBtn" type="button">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
